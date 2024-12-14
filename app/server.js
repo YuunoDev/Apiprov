@@ -9,7 +9,10 @@ const spotify = require("./routes/spotify");
 var port = process.env.PORT || 8080  // establecemos nuestro puerto
 
 app.use(cors({
-    origin: 'https://nodejs-render-jzcu.onrender.com',  
+    origin: [
+        'http://localhost:4200',  // Tu aplicación Angular en desarrollo
+        'https://nodejs-render-jzcu.onrender.com'  // Tu aplicación en producción
+      ],  
   }));
 
 app.use(bodyParser.urlencoded({ extended: false }));
