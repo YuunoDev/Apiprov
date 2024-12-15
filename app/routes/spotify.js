@@ -5,7 +5,6 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
-const e = require('express');
 
 // Configura tus credenciales de Spotify
 const spotifyApi = new SpotifyWebApi({
@@ -29,6 +28,57 @@ router.get('/login', (req, res) => {
     res.redirect(authorizeURL);
 });
 
+// Guardar token en archivo
+const TOKEN_FILE = path.join(__dirname, 'user.json');
+
+async function leerToken() {
+    try {
+        const data = await fs.readFile(TOKEN_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        return {};
+    }
+}
+
+async function guardartokenuser() {
+    try {
+        const data = await spotifyApi.getMe();
+        const tokens = await leerToken();
+
+        const userId = data.body.id;
+        const token = spotifyApi.getAccessToken();
+        const refreshToken = spotifyApi.getRefreshToken();
+        
+        tokens[userId] = {
+            id: userId,
+            token: token,
+            refreshToken: refreshToken
+        };
+
+        await fs.writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2));
+
+    }
+    catch (error) {
+        console.error('Error al guardar token:', error);
+    }
+}
+
+// cargar token de usuario dependiendo del id mandado
+async function cargarToken(userId) {
+    try {
+        const tokens = await leerToken();
+        const userToken = tokens[userId];
+
+        if (userToken) {
+            spotifyApi.setAccessToken(userToken.token);
+            spotifyApi.setRefreshToken(userToken.refreshToken);
+        }
+    } catch (error) {
+        console.error('Error al cargar token:', error);
+    }
+}
+
+
 // Callback después del login
 router.get('/callback', async (req, res) => {
     const { code } = req.query;
@@ -43,7 +93,8 @@ router.get('/callback', async (req, res) => {
         console.log('Token de acceso:', data.body['access_token']);
         console.log('Token de actualización:', data.body['refresh_token']);
 
-
+        // Guardar token en archivo
+        guardartokenuser();
         //mostrar mensaje de exito
         //res.send('Login exitoso');
         res.redirect(`http://localhost:4200/dashboard?access_token=${data.body['access_token']}`);
@@ -55,6 +106,11 @@ router.get('/callback', async (req, res) => {
 // Obtener perfil del usuario
 router.get('/perfil', async (req, res) => {
     try {
+        //se resive el id del usuario
+        const userId = req.query.userId;
+        //cargar token del usuario
+        cargarToken(userId);
+        //obtener datos del usuario
         const data = await spotifyApi.getMe();
         res.json(data.body);
     } catch (error) {
@@ -137,6 +193,7 @@ async function refreshAccessToken() {
 
 // Estructura para almacenar información de grupos
 const GROUPS_FILE = path.join(__dirname, 'groups.json');
+
 
 // Función para generar ID único para grupos
 function generateGroupId() {
@@ -438,7 +495,7 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
             name: playlistName,
             createdAt: new Date().toISOString(),
             url: playlist.body.external_urls.spotify,
-            trackCount: trackUris.length
+            //trackCount: trackUris.length
         };
 
         await saveGroupsData(groups);
@@ -450,7 +507,12 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al crear la playlist:', error);
+        console.error('Detailed playlist creation error:', {
+            status: error.statusCode,
+            message: error.message,
+            body: error.body,
+            userId: error.userId
+        });
         res.status(500).json({ error: 'Error al crear la playlist' });
     }
 });

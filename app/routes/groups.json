@@ -266,6 +266,12 @@
         "joinedAt": "2024-12-14T17:43:43.420Z"
       }
     ],
-    "createdAt": "2024-12-14T17:40:42.423Z"
+    "createdAt": "2024-12-14T17:40:42.423Z",
+    "playlist": {
+      "id": "0pqpvlMwUaFOcAMoAckbc8",
+      "name": "Grupo Alive - Playlist Compartida",
+      "createdAt": "2024-12-15T05:17:01.989Z",
+      "url": "https://open.spotify.com/playlist/0pqpvlMwUaFOcAMoAckbc8"
+    }
   }
 }

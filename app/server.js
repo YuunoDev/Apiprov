@@ -12,8 +12,16 @@ app.use(cors({
     origin: [
         'http://localhost:4200',  // Tu aplicación Angular en desarrollo
         'https://nodejs-render-jzcu.onrender.com'  // Tu aplicación en producción
-      ],  
-  }));
+    ],
+}));
+
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    next();
+  });
+  
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());        // configuramos la app para usar bodyParser
