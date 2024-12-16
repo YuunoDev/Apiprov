@@ -97,7 +97,7 @@ router.get('/callback', async (req, res) => {
         guardartokenuser();
         //mostrar mensaje de exito
         //res.send('Login exitoso');
-        res.redirect(`http://localhost:4200/dashboard?access_token=${data.body['access_token']}`);
+        res.redirect(`http:///mixify.ddns.net:8080/dashboard?access_token=${data.body['access_token']}`);
     } catch (error) {
         res.status(400).json({ error: 'Error en autenticación' });
     }

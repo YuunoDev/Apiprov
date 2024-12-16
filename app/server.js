@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Ruta específica para el index.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.csr.html'));
 });
 
 app.use('/prov', rutas);
