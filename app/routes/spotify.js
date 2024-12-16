@@ -343,8 +343,8 @@ router.get('/group/user', async (req, res) => {
         const userData = await spotifyApi.getMe(); // This requires valid Spotify authentication
         const userId = userData.body.id;
 
+        //filtrar los grupos donde este el id del usuario
         const userGroups = Object.values(groups)
-
             .filter(group => group.members.find(member => member.userId === userId))
             .map(group => ({
                 id: group.id,
