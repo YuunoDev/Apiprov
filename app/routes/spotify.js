@@ -67,10 +67,9 @@ router.get('/callback', async (req, res) => {
         // Guarda los tokens
         spotifyApi.setAccessToken(data.body['access_token']);
         spotifyApi.setRefreshToken(data.body['refresh_token']);
-
         //mostrar mensaje de exito
         //res.send('Login exitoso');
-        res.redirect(`http:///mixify.ddns.net:8080/dashboard?access_token=${data.body['access_token']}`);
+        res.redirect(`http://mixify.ddns.net:8080/dashboard?access_token=${data.body['access_token']}`);
     } catch (error) {
         res.status(400).json({ error: 'Error en autenticación' });
     }
@@ -85,6 +84,8 @@ router.get('/perfil', async (req, res) => {
         cargarToken(userId);
         //obtener datos del usuario
         const data = await spotifyApi.getMe();
+
+
         res.json(data.body);
     } catch (error) {
         res.status(400).json({ error: 'Error al obtener perfil' });
@@ -164,10 +165,13 @@ async function refreshAccessToken() {
 }
 
 // Estructura para almacenar información de grupos
-const BASE_DIR = path.resolve(__dirname, '/mnt/nfs_shared/'); 
+//const BASE_DIR = path.resolve(__dirname, '/mnt/nfs_shared/');
+const BASE_DIR = path.resolve(__dirname, 'C:/Users/adria/Documents/');
 
 // Construye la ruta al archivo 'groups.json'
 const GROUPS_FILE = path.join(BASE_DIR, 'groups.json');
+
+//const GROUPS_FILE = path.join(__dirname, 'groups.json');
 
 // Función para generar ID único para grupos
 function generateGroupId() {
@@ -181,6 +185,7 @@ async function readGroupsData() {
         return JSON.parse(data);
     } catch (error) {
         // Si el archivo no existe, retorna un objeto vacío
+        console.error('Error al leer datos de grupos:', error);
         return {};
     }
 }
@@ -335,7 +340,7 @@ router.post('/group/:groupId/join/:userId', async (req, res) => {
 router.get('/group/user', async (req, res) => {
     try {
         const groups = await readGroupsData();
-        const userData = await spotifyApi.getMe();
+        const userData = await spotifyApi.getMe(); // This requires valid Spotify authentication
         const userId = userData.body.id;
 
         const userGroups = Object.values(groups)

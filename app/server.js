@@ -11,7 +11,8 @@ var port = process.env.PORT || 8080  // establecemos nuestro puerto
 app.use(cors({
     origin: [
         'http://localhost:4200',  // Tu aplicación Angular en desarrollo
-        'https://nodejs-render-jzcu.onrender.com'  // Tu aplicación en producción
+        'https://nodejs-render-jzcu.onrender.com',  // Tu aplicación en producción
+        'http://mixify.ddns.net:8080'  // Tu aplicación Angular en desarrollo
     ],
 }));
 
@@ -34,7 +35,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.csr.html'));
 });
 
-app.use('/prov', rutas);
+//app.use('/prov', rutas);
 app.use('/api', spotify);
 
 // iniciamos nuestro servidor
