@@ -40,28 +40,6 @@ async function leerToken() {
     }
 }
 
-async function guardartokenuser() {
-    try {
-        const data = await spotifyApi.getMe();
-        const tokens = await leerToken();
-
-        const userId = data.body.id;
-        const token = spotifyApi.getAccessToken();
-        const refreshToken = spotifyApi.getRefreshToken();
-        
-        tokens[userId] = {
-            id: userId,
-            token: token,
-            refreshToken: refreshToken
-        };
-
-        await fs.writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-
-    }
-    catch (error) {
-        console.error('Error al guardar token:', error);
-    }
-}
 
 // cargar token de usuario dependiendo del id mandado
 async function cargarToken(userId) {
@@ -90,11 +68,6 @@ router.get('/callback', async (req, res) => {
         spotifyApi.setAccessToken(data.body['access_token']);
         spotifyApi.setRefreshToken(data.body['refresh_token']);
 
-        console.log('Token de acceso:', data.body['access_token']);
-        console.log('Token de actualización:', data.body['refresh_token']);
-
-        // Guardar token en archivo
-        guardartokenuser();
         //mostrar mensaje de exito
         //res.send('Login exitoso');
         res.redirect(`http:///mixify.ddns.net:8080/dashboard?access_token=${data.body['access_token']}`);
@@ -190,10 +163,11 @@ async function refreshAccessToken() {
     }
 }
 
-
 // Estructura para almacenar información de grupos
-const GROUPS_FILE = path.join(__dirname, 'groups.json');
+const BASE_DIR = path.resolve(__dirname, '/mnt/nfs_shared/'); 
 
+// Construye la ruta al archivo 'groups.json'
+const GROUPS_FILE = path.join(BASE_DIR, 'groups.json');
 
 // Función para generar ID único para grupos
 function generateGroupId() {
@@ -482,7 +456,6 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
 
         // Obtener el primer miembro (creador del grupo)
         const groupCreator = groups[groupId].members[0];
-        console.log('Creating playlist for user:', groupCreator.userId);
 
         // Obtener géneros comunes con más del 50% de coincidencia
         const genreFrequency = {};
@@ -491,7 +464,6 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
                 genreFrequency[genre] = (genreFrequency[genre] || 0) + 1;
             });
         });
-        console.log('Genre frequency:', genreFrequency);
 
         const commonGenres = Object.entries(genreFrequency)
             .filter(([, count]) => (count / groups[groupId].members.length) >= 0.5)
@@ -502,7 +474,6 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
                 error: 'No se encontraron géneros en común suficientes entre los miembros'
             });
         }
-        console.log('Common genres:', commonGenres);
 
         // Crear la playlist
         const playlistName = `Grupo ${groups[groupId].namegroup} - Playlist Compartida`;
@@ -514,7 +485,6 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
             collaborative: true,
             display_name: playlistName
         });
-        console.log('Playlist created:', playlist.body);
 
         // obtener de cada miembro las canciones
         const trackUris = [];
@@ -552,8 +522,6 @@ router.post('/groups/:groupId/create-playlist', async (req, res) => {
 
         // Agregar canciones a la playlist
         await spotifyApi.addTracksToPlaylist(playlist.body.id, trackUris);
-        console.log('Tracks added to playlist:', trackUris);
-
 
         // Guardar la información de la playlist en el grupo
         groups[groupId].playlist = {
