@@ -10,7 +10,7 @@ const path = require('path');
 const spotifyApi = new SpotifyWebApi({
     clientId: 'cc5410b68ea947cb82e6562a9fa2ff4d',
     clientSecret: '0b1b5539952a4940b5f1a99635a986d7',
-    redirectUri: 'http://localhost:8080/api/callback' // Ajusta según tu configuración
+    redirectUri: 'http://mixify.ddns.net:8080/api/callback' // Ajusta según tu configuración
 });
 
 // Ruta para iniciar el proceso de login
@@ -249,7 +249,7 @@ router.post('/group/create', async (req, res) => {
             groupId,
             message: 'Grupo creado exitosamente',
             id: groupId,
-            link: `http://localhost:8080/api/groups/${groupId}/join`
+            link: `http://mixify.ddns.net:8080/api/groups/${groupId}/join`
         });
     } catch (error) {
         res.status(500).json({ error: 'Error al crear grupo' });
@@ -314,6 +314,49 @@ router.post('/groups/:groupId/join', async (req, res) => {
     }
 });
 
+//agregar al grupo por id de usuario, esta al ser desde la app manda su top tracks
+router.post('/group/:groupId/join/:userId', async (req, res) => {
+    try {
+        const { groupId, userId } = req.params;
+        const groups = await readGroupsData();
+
+        if (!groups[groupId]) {
+            return res.status(404).json({ error: 'Grupo no encontrado' });
+        }
+
+        // Obtener top tracks y géneros desde el cuerpo de la petición
+        const { topTracks, topGenres } = req.body;
+
+        const memberData = {
+            userId: userId,
+            topGenres: topGenres, // Lista de géneros enviada desde el cliente
+            topTracks: topTracks.map(track => ({
+                id: track.id,
+                name: track.name,
+                artist: track.artist,
+                imglink: track.imglink
+            })),
+            joinedAt: new Date().toISOString()
+        };
+
+        // Agregar usuario al grupo si no existe
+        if (!groups[groupId].members.find(member => member.userId === userId)) {
+            groups[groupId].members.push(memberData);
+        }
+
+        await saveGroupsData(groups);
+
+        res.json({
+            message: 'Usuario agregado al grupo exitosamente',
+            memberData
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Error al unirse al grupo' });
+    }
+});
+
+
 //Obtener grupos de usuario
 router.get('/group/user', async (req, res) => {
     try {
@@ -323,6 +366,29 @@ router.get('/group/user', async (req, res) => {
 
         const userGroups = Object.values(groups)
 
+            .filter(group => group.members.find(member => member.userId === userId))
+            .map(group => ({
+                id: group.id,
+                name: group.namegroup,
+                members: group.members,
+                playlist: group.playlist,
+                createdAt: group.createdAt
+            }));
+
+        res.json(userGroups);
+
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener grupos del usuario' });
+    }
+});
+
+//obtener grupo por id de usuario
+router.get('/group/user/:userId', async (req, res) => {
+    try {
+        const groups = await readGroupsData();
+        const userId = req.params.userId;
+
+        const userGroups = Object.values(groups)
             .filter(group => group.members.find(member => member.userId === userId))
             .map(group => ({
                 id: group.id,
